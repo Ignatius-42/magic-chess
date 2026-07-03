@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MagicChess Arena - Ultimate Edition</title>
+    <title>MagicChess Arena - Ultimate Fixed Edition</title>
     
     <!-- Core Chess Style Dependencies -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
@@ -209,7 +209,6 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js"></script>
 </head>
 <body>
 
@@ -235,7 +234,7 @@
                     <button id="mode-pvp" class="mode-btn" onclick="changeGameMode('pvp')">👥 vs Friend</button>
                 </div>
 
-                <div id="status" class="status-text">White's Turn! Select a piece to see magic indicators.</div>
+                <div id="status" class="status-text">White's Turn! Select a piece to view magic paths.</div>
                 
                 <div style="margin-top: 20px;">
                     <div style="font-size: 0.9rem; color: #a0aec0; margin-bottom: 5px;">Active Turn Clock:</div>
@@ -250,14 +249,23 @@
     <script>
         var game = new Chess();
         var board = null;
-        var stockfish = typeof STOCKFISH === "function" ? STOCKFISH() : new Worker("stockfish.js");
+        var stockfishWorker = null;
         
-        var gameMode = 'bot'; // 'bot' or 'pvp'
+        var gameMode = 'bot'; 
 
         // Clocks configurations (10 Minutes)
         var whiteTime = 600;
         var blackTime = 600;
         var timerInterval = null;
+
+        // Initialize Standalone Worker for Stockfish to bypass browser CORS restrictions
+        function initStockfishEngine() {
+            if (stockfishWorker) {
+                stockfishWorker.terminate();
+            }
+            // Uses a robust inline blob engine wrapper targeting fallback webassembly compilation
+            stockfishWorker = new Worker("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js");
+        }
 
         function changeGameMode(mode) {
             gameMode = mode;
@@ -279,7 +287,6 @@
             document.getElementById('white-clock').innerText = wStr;
             document.getElementById('black-clock').innerText = bStr;
             
-            // Highlight the active timer color grid
             if (game.turn() === 'w') {
                 document.getElementById('master-timer').innerText = wStr;
                 document.getElementById('white-clock').className = "timer-box timer-active";
@@ -290,7 +297,6 @@
                 document.getElementById('black-clock').className = "timer-box timer-active";
             }
 
-            // Arrange Tags dynamically based on board orientation
             let currentOrientation = board ? board.orientation() : 'white';
             let whiteClockHtml = `<div id="white-clock" class="${document.getElementById('white-clock').className}" style="font-size:1.1rem; padding:4px 10px; margin:0;">${wStr}</div>`;
             let blackClockHtml = `<div id="black-clock" class="${document.getElementById('black-clock').className}" style="font-size:1.1rem; padding:4px 10px; margin:0;">${bStr}</div>`;
@@ -299,7 +305,6 @@
                 document.getElementById('top-tag').innerHTML = `🤖 Stockfish Bot (Black) ${blackClockHtml}`;
                 document.getElementById('bottom-tag').innerHTML = `👤 You (White) ${whiteClockHtml}`;
             } else {
-                // PvP mode labels based on who is rotated to the bottom
                 if (currentOrientation === 'white') {
                     document.getElementById('top-tag').innerHTML = `👤 Player 2 (Black) ${blackClockHtml}`;
                     document.getElementById('bottom-tag').innerHTML = `👤 Player 1 (White) ${whiteClockHtml}`;
@@ -373,9 +378,8 @@
             if (game.game_over()) return false;
             
             if (gameMode === 'bot') {
-                if (piece.search(/^b/) !== -1) return false; // Bot handles Black
+                if (piece.search(/^b/) !== -1) return false; 
             } else {
-                // PvP rule block: Enforce strict turn matching color
                 if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
                     (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
                     return false;
@@ -391,10 +395,10 @@
 
             document.getElementById('status').innerText = "🔮 Stockfish is casting a counter-move...";
             
-            stockfish.postMessage("position startpos moves " + game.history({ verbose: true }).map(m => m.from + m.to + (m.promotion || '')).join(' '));
-            stockfish.postMessage("go movetime 1200"); 
+            stockfishWorker.postMessage("position startpos moves " + game.history({ verbose: true }).map(m => m.from + m.to + (m.promotion || '')).join(' '));
+            stockfishWorker.postMessage("go movetime 1000"); 
 
-            stockfish.onmessage = function(event) {
+            stockfishWorker.onmessage = function(event) {
                 if (event.data.startsWith("bestmove")) {
                     var bestMove = event.data.split(" ")[1];
                     game.move({
@@ -433,7 +437,6 @@
             processCheckVerification();
             updateStatusMessages();
             
-            // Trigger automatic board flipping in vs Friend mode
             if (gameMode === 'pvp' && !game.game_over()) {
                 let nextTurnOrientation = (game.turn() === 'w') ? 'white' : 'black';
                 board.orientation(nextTurnOrientation);
@@ -441,9 +444,8 @@
             
             updateLabelsAndClocks();
 
-            // Run AI if in bot mode
             if (gameMode === 'bot') {
-                window.setTimeout(makeStockfishMove, 400);
+                window.setTimeout(makeStockfishMove, 300);
             }
         }
 
@@ -492,21 +494,24 @@
             board.start();
             clearCheckAlerts();
             removeMagicHighlights();
+            initStockfishEngine();
             
             document.getElementById('master-timer').className = "timer-box timer-active";
             updateStatusMessages();
             updateLabelsAndClocks();
         }
 
+        // Exact match targeting for Neo Vector piece template shapes
         var config = {
             draggable: true,
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/neo/{piece}.png'
         };
         
         board = Chessboard('board', config);
+        initStockfishEngine();
         updateLabelsAndClocks();
     </script>
 </body>

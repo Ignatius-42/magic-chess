@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MagicChess Arena - Ultimate Fixed Edition</title>
+    <title>MagicChess Arena - Final Fixed Edition</title>
     
-    <!-- Core Chess Style Dependencies -->
+    <!-- Core CSS for Chessboard Layout -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
     
     <style>
@@ -78,6 +78,9 @@
         .black-3c85d { background-color: #87ceeb !important; }
 
         /* Olive Green Centered Triangle for Empty Legal Moves */
+        .suggest-move {
+            position: relative;
+        }
         .suggest-move::after {
             content: "";
             position: absolute;
@@ -89,16 +92,18 @@
             border-left: 8px solid transparent;
             border-right: 8px solid transparent;
             border-bottom: 14px solid #769656;
+            z-index: 10;
+            pointer-events: none;
         }
 
         /* Pink Background Target for Legal Captures */
         .suggest-capture {
             background-color: #ffb6c1 !important;
-            box-shadow: inset 0 0 15px rgba(255, 182, 193, 0.8);
+            box-shadow: inset 0 0 15px rgba(255, 182, 193, 0.8) !important;
         }
 
         /* Blinking Red Check Alert */
-        @keyframes pulse-red {
+        @keyframes pulse-red-blue {
             0% { background-color: #87ceeb; }
             50% { background-color: #ff3333; box-shadow: inset 0 0 20px #ff0000; }
             100% { background-color: #87ceeb; }
@@ -108,8 +113,8 @@
             50% { background-color: #ff3333; box-shadow: inset 0 0 20px #ff0000; }
             100% { background-color: #ffffff; }
         }
-        .check-alert-black { animation: pulse-red 1s infinite; }
-        .check-alert-white { animation: pulse-red-white 1s infinite; }
+        .check-alert-black { animation: pulse-red-blue 1s infinite !important; }
+        .check-alert-white { animation: pulse-red-white 1s infinite !important; }
 
         /* --- SIDE HUD CONTROL PANEL --- */
         .side-hud {
@@ -205,7 +210,7 @@
         .btn-restart:hover { background: #60b4db; }
     </style>
 
-    <!-- Script Architecture Libraries -->
+    <!-- Essential Javascript Architecture Libraries -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
@@ -258,13 +263,34 @@
         var blackTime = 600;
         var timerInterval = null;
 
-        // Initialize Standalone Worker for Stockfish to bypass browser CORS restrictions
+        // Secure jsDelivr CDN source for Neo vector pieces
+        function getCustomPieceTheme(piece) {
+            return 'https://cdn.jsdelivr.net/gh/ornicar/lila@master/public/piece/neo/' + piece + '.svg';
+        }
+
+        // Initialize completely secure standalone worker engine for GitHub Pages compatibility
         function initStockfishEngine() {
             if (stockfishWorker) {
                 stockfishWorker.terminate();
             }
-            // Uses a robust inline blob engine wrapper targeting fallback webassembly compilation
             stockfishWorker = new Worker("https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js");
+            
+            stockfishWorker.onmessage = function(event) {
+                if (event.data.startsWith("bestmove")) {
+                    var bestMove = event.data.split(" ")[1];
+                    game.move({
+                        from: bestMove.substring(0, 2),
+                        to: bestMove.substring(2, 4),
+                        promotion: bestMove.substring(4, 5) || undefined
+                    });
+                    
+                    board.position(game.fen());
+                    removeMagicHighlights();
+                    processCheckVerification();
+                    updateStatusMessages();
+                    updateLabelsAndClocks();
+                }
+            };
         }
 
         function changeGameMode(mode) {
@@ -396,24 +422,7 @@
             document.getElementById('status').innerText = "🔮 Stockfish is casting a counter-move...";
             
             stockfishWorker.postMessage("position startpos moves " + game.history({ verbose: true }).map(m => m.from + m.to + (m.promotion || '')).join(' '));
-            stockfishWorker.postMessage("go movetime 1000"); 
-
-            stockfishWorker.onmessage = function(event) {
-                if (event.data.startsWith("bestmove")) {
-                    var bestMove = event.data.split(" ")[1];
-                    game.move({
-                        from: bestMove.substring(0, 2),
-                        to: bestMove.substring(2, 4),
-                        promotion: bestMove.substring(4, 5) || undefined
-                    });
-                    
-                    board.position(game.fen());
-                    removeMagicHighlights();
-                    processCheckVerification();
-                    updateStatusMessages();
-                    updateLabelsAndClocks();
-                }
-            };
+            stockfishWorker.postMessage("go depth 10"); 
         }
 
         function onDrop (source, target) {
@@ -501,13 +510,12 @@
             updateLabelsAndClocks();
         }
 
-        // Exact match targeting for Neo Vector piece template shapes
         var config = {
             draggable: true,
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: 'https://chessboardjs.com/img/chesspieces/neo/{piece}.png'
+            pieceTheme: getCustomPieceTheme
         };
         
         board = Chessboard('board', config);

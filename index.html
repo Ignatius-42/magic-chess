@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MagicChess Arena - Final Fixed Edition</title>
+    <title>MagicChess Arena</title>
     
     <!-- Core CSS for Chessboard Layout -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
@@ -263,11 +263,6 @@
         var blackTime = 600;
         var timerInterval = null;
 
-        // Secure jsDelivr CDN source for Neo vector pieces
-        function getCustomPieceTheme(piece) {
-            return 'https://cdn.jsdelivr.net/gh/ornicar/lila@master/public/piece/neo/' + piece + '.svg';
-        }
-
         // Initialize completely secure standalone worker engine for GitHub Pages compatibility
         function initStockfishEngine() {
             if (stockfishWorker) {
@@ -510,12 +505,13 @@
             updateLabelsAndClocks();
         }
 
+        // Direct, high-speed, canonical CDN hosted link specifically for chessboard-js
         var config = {
             draggable: true,
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: getCustomPieceTheme
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
         };
         
         board = Chessboard('board', config);

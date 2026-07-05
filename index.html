@@ -263,8 +263,6 @@
         var whiteTime = 600;
         var blackTime = 600;
         var timerInterval = null;
-        
-        // Tracking variable for click-to-move architecture
         var selectedSourceSquare = null;
 
         function initStockfishEngine() {
@@ -340,7 +338,6 @@
             var moves = game.moves({ square: square, verbose: true });
             if (moves.length === 0) return;
             
-            // Highlight the selected parent piece square
             $('#board .square-' + square).addClass('selected-piece');
 
             moves.forEach(function(move) {
@@ -389,14 +386,10 @@
             return processMoveExecution(source, target);
         }
 
-        // --- NEW CLICK-TO-MOVE HANDLER ---
         function onSquareClick(square) {
             if (game.game_over()) return;
-            
-            // Restriction if playing against the bot during Black's turn
             if (gameMode === 'bot' && game.turn() === 'b') return;
 
-            // Step 1: If a piece is already chosen and the clicked square is a highlighted target move, execute it!
             if (selectedSourceSquare !== null) {
                 var moves = game.moves({ square: selectedSourceSquare, verbose: true });
                 var isLegal = moves.some(m => m.to === square);
@@ -407,14 +400,12 @@
                 }
             }
 
-            // Step 2: Selecting or switching pieces
             var piece = game.get(square);
             if (piece && piece.color === game.turn()) {
                 removeMagicHighlights();
                 selectedSourceSquare = square;
                 showMagicHighlights(square);
             } else {
-                // Clicked an empty invalid square or opponent piece out of turn - clear choice
                 removeMagicHighlights();
                 selectedSourceSquare = null;
             }
@@ -441,19 +432,24 @@
             updateLabelsAndClocks();
         }
 
+        // --- CUSTOM HIGH-CONTRAST CARTOON PIECES ENGINE ---
+        // Uses the open-source 'cutes' theme mapping vector set
+        function customKidThemePieces(piece) {
+            return 'https://raw.githubusercontent.com/AcademicGit/lila/master/public/piece/cutes/' + piece + '.png';
+        }
+
         var config = {
             draggable: true,
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+            pieceTheme: customKidThemePieces // Replaced standard Wikipedia pieces
         };
         
         board = Chessboard('board', config);
         initStockfishEngine();
         updateLabelsAndClocks();
 
-        // Bind the new mouse click engine logic directly to the chessboard DOM elements
         $('#board').on('click', '.square-55d63', function() {
             var square = $(this).attr('data-square');
             onSquareClick(square);

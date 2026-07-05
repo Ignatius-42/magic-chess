@@ -432,9 +432,8 @@
             updateLabelsAndClocks();
         }
 
-        // --- CUSTOM HIGH-CONTRAST CARTOON PIECES ENGINE ---
-        // Uses the open-source 'cutes' theme mapping vector set
-        function customKidThemePieces(piece) {
+        // --- SAFE, COMPILER-FRIENDLY PIECE THEME MAPPING ---
+        function cleanCutesPieceLoader(piece) {
             return 'https://lichess1.org/assets/piece/cutes/' + piece + '.png';
         }
 
@@ -443,7 +442,7 @@
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: 'https://lichess1.org/assets/piece/cutes/{piece}.png' // Replaced standard Wikipedia pieces
+            pieceTheme: cleanCutesPieceLoader
         };
         
         board = Chessboard('board', config);

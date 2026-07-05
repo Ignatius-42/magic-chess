@@ -15,14 +15,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #fff9e6; /* Soft cream/parchment color like an old adventure map */
-            color: #4a2c00; /* Deep chocolate brown text instead of harsh black */
+            background-color: #fff9e6; 
+            color: #4a2c00; 
             margin: 0;
             padding: 20px;
         }
 
         h1 {
-            color: #ff6f00; /* Vibrant Cheddar Orange */
+            color: #ff6f00; 
             margin-bottom: 5px;
             font-size: 2.8rem;
             text-shadow: 2px 2px 0px #fff, 4px 4px 0px #ffcc00;
@@ -77,16 +77,21 @@
             box-shadow: 0 12px 0px #d4a373, 0 16px 25px rgba(0,0,0,0.15);
             border-radius: 16px;
             overflow: hidden;
-            border: 6px solid #8d5b00; /* Sturdy wooden border */
+            border: 6px solid #8d5b00; 
         }
 
         /* ================= GERONIMO'S CHEESE BOARD THEME ================= */
-        /* Forces the squares into delicious cheese colors! */
         .white-1e1d7 { 
-            background-color: #fffdf0 !important; /* Creamy Swiss Cheese White */
+            background-color: #fffdf0 !important; 
         }
         .black-3c85d { 
-            background-color: #ffb703 !important; /* Golden Cheddar Cheese Yellow */
+            background-color: #ffb703 !important; 
+        }
+
+        /* Active highlight for the selected piece */
+        .selected-piece {
+            box-shadow: inset 0 0 0 5px #4bc05f !important;
+            background-color: #e8f5e9 !important;
         }
 
         /* Fun Bubbles for Legal Moves */
@@ -97,13 +102,14 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            background-color: rgba(74, 194, 154, 0.6); /* Friendly green bubble */
+            width: 22px;
+            height: 22px;
+            background-color: rgba(75, 192, 95, 0.75); 
             border-radius: 50%;
             z-index: 10;
             pointer-events: none;
-            border: 2px solid #2a9d8f;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         /* Red Target for Capturing an Opponent */
@@ -112,7 +118,7 @@
             background-color: #f4a261 !important;
         }
 
-        /* Side Control Panel styled like an Adventure Log */
+        /* Side Control Panel */
         .side-hud {
             flex: 1;
             background: #ffffff;
@@ -201,7 +207,7 @@
             font-size: 1.2rem;
             font-weight: bold;
             font-family: inherit;
-            background: #4bc05f; /* Friendly Go-Green */
+            background: #4bc05f; 
             color: white;
             border: none;
             border-radius: 12px;
@@ -257,6 +263,9 @@
         var whiteTime = 600;
         var blackTime = 600;
         var timerInterval = null;
+        
+        // Tracking variable for click-to-move architecture
+        var selectedSourceSquare = null;
 
         function initStockfishEngine() {
             if (stockfishWorker) stockfishWorker.terminate();
@@ -324,12 +333,16 @@
         }
 
         function removeMagicHighlights() {
-            $('#board .square-55d63').removeClass('suggest-move suggest-capture');
+            $('#board .square-55d63').removeClass('suggest-move suggest-capture selected-piece');
         }
 
         function showMagicHighlights(square) {
             var moves = game.moves({ square: square, verbose: true });
             if (moves.length === 0) return;
+            
+            // Highlight the selected parent piece square
+            $('#board .square-' + square).addClass('selected-piece');
+
             moves.forEach(function(move) {
                 var $square = $('#board .square-' + move.to);
                 if (move.captured) {
@@ -345,6 +358,7 @@
             if (gameMode === 'bot' && piece.search(/^b/) !== -1) return false;
             removeMagicHighlights();
             showMagicHighlights(source);
+            selectedSourceSquare = source;
         }
 
         function makeStockfishMove() {
@@ -354,18 +368,55 @@
             stockfishWorker.postMessage("go depth 10"); 
         }
 
-        function onDrop (source, target) {
+        function processMoveExecution(source, target) {
             var move = game.move({ from: source, to: target, promotion: 'q' });
-            if (move === null) { removeMagicHighlights(); return 'snapback'; }
+            if (move === null) return 'snapback';
 
             removeMagicHighlights();
+            selectedSourceSquare = null;
             board.position(game.fen());
+            
             if (!timerInterval) startClockEngine();
             updateStatusMessages();
             updateLabelsAndClocks();
 
             if (gameMode === 'bot') {
                 window.setTimeout(makeStockfishMove, 250);
+            }
+        }
+
+        function onDrop (source, target) {
+            return processMoveExecution(source, target);
+        }
+
+        // --- NEW CLICK-TO-MOVE HANDLER ---
+        function onSquareClick(square) {
+            if (game.game_over()) return;
+            
+            // Restriction if playing against the bot during Black's turn
+            if (gameMode === 'bot' && game.turn() === 'b') return;
+
+            // Step 1: If a piece is already chosen and the clicked square is a highlighted target move, execute it!
+            if (selectedSourceSquare !== null) {
+                var moves = game.moves({ square: selectedSourceSquare, verbose: true });
+                var isLegal = moves.some(m => m.to === square);
+                
+                if (isLegal) {
+                    processMoveExecution(selectedSourceSquare, square);
+                    return;
+                }
+            }
+
+            // Step 2: Selecting or switching pieces
+            var piece = game.get(square);
+            if (piece && piece.color === game.turn()) {
+                removeMagicHighlights();
+                selectedSourceSquare = square;
+                showMagicHighlights(square);
+            } else {
+                // Clicked an empty invalid square or opponent piece out of turn - clear choice
+                removeMagicHighlights();
+                selectedSourceSquare = null;
             }
         }
 
@@ -382,6 +433,7 @@
             game = new Chess();
             whiteTime = 600;
             blackTime = 600;
+            selectedSourceSquare = null;
             board.start();
             removeMagicHighlights();
             initStockfishEngine();
@@ -400,6 +452,12 @@
         board = Chessboard('board', config);
         initStockfishEngine();
         updateLabelsAndClocks();
+
+        // Bind the new mouse click engine logic directly to the chessboard DOM elements
+        $('#board').on('click', '.square-55d63', function() {
+            var square = $(this).attr('data-square');
+            onSquareClick(square);
+        });
     </script>
 </body>
 </html>

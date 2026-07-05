@@ -3,34 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MagicChess Arena</title>
+    <title>Geronimo's Great Cheese Chess Adventure!</title>
     
     <!-- Core CSS for Chessboard Layout -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
     
     <style>
-        /* Premium Midnight Dark Mode Background */
+        /* Bright, Energetic, Playful Kid-Friendly Background */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Fredoka One', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #121824;
-            color: #ffffff;
+            background-color: #fff9e6; /* Soft cream/parchment color like an old adventure map */
+            color: #4a2c00; /* Deep chocolate brown text instead of harsh black */
             margin: 0;
             padding: 20px;
         }
 
         h1 {
-            color: #87ceeb;
+            color: #ff6f00; /* Vibrant Cheddar Orange */
             margin-bottom: 5px;
-            font-size: 2.5rem;
-            text-shadow: 0 0 10px rgba(135, 206, 235, 0.3);
+            font-size: 2.8rem;
+            text-shadow: 2px 2px 0px #fff, 4px 4px 0px #ffcc00;
+            text-align: center;
         }
 
         .subtitle {
-            color: #a0aec0;
+            color: #8d5b00;
+            font-size: 1.2rem;
+            font-weight: bold;
             margin-bottom: 25px;
+            background: #ffe699;
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 2px dashed #ff6f00;
         }
 
         .game-layout {
@@ -39,7 +46,8 @@
             max-width: 1000px;
             width: 100%;
             justify-content: center;
-            align-items: stretch;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .board-container {
@@ -50,39 +58,38 @@
         }
 
         .player-tag {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            padding: 8px 12px;
-            background: #1a2333;
-            border: 1px solid #2d3748;
-            border-radius: 6px;
-            margin: 8px 0;
-            color: #e2e8f0;
+            padding: 10px 15px;
+            background: #ffffff;
+            border: 3px solid #ffb300;
+            border-radius: 12px;
+            margin: 10px 0;
+            color: #4a2c00;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 4px 0px #ffb300;
         }
 
         #board {
             width: 480px;
-            box-shadow: 0 12px 36px rgba(0,0,0,0.5);
-            border-radius: 6px;
+            box-shadow: 0 12px 0px #d4a373, 0 16px 25px rgba(0,0,0,0.15);
+            border-radius: 16px;
             overflow: hidden;
-            border: 4px solid #1a2333;
+            border: 6px solid #8d5b00; /* Sturdy wooden border */
         }
 
-        /* ================= CUSTOM CHESSBOARD COLOR COMBINATION ================= */
-        /* This forces the squares to perfectly render the requested colors, bypassing defaults */
+        /* ================= GERONIMO'S CHEESE BOARD THEME ================= */
+        /* Forces the squares into delicious cheese colors! */
         .white-1e1d7 { 
-            background-color: #f0d9b5 !important; 
-            color: #b58863 !important;
+            background-color: #fffdf0 !important; /* Creamy Swiss Cheese White */
         }
         .black-3c85d { 
-            background-color: #b58863 !important; 
-            color: #f0d9b5 !important;
+            background-color: #ffb703 !important; /* Golden Cheddar Cheese Yellow */
         }
 
-        /* Olive Green Marker for Legal Moves */
+        /* Fun Bubbles for Legal Moves */
         .suggest-move { position: relative; }
         .suggest-move::after {
             content: "";
@@ -90,106 +97,122 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 16px;
-            height: 16px;
-            background-color: rgba(118, 150, 86, 0.7);
+            width: 20px;
+            height: 20px;
+            background-color: rgba(74, 194, 154, 0.6); /* Friendly green bubble */
             border-radius: 50%;
             z-index: 10;
             pointer-events: none;
+            border: 2px solid #2a9d8f;
         }
 
-        /* Subtle Target Overlay for Captures */
+        /* Red Target for Capturing an Opponent */
         .suggest-capture {
-            box-shadow: inset 0 0 15px rgba(214, 40, 40, 0.6) !important;
+            box-shadow: inset 0 0 0 6px #e76f51 !important;
+            background-color: #f4a261 !important;
         }
 
-        /* Side Control Panel */
+        /* Side Control Panel styled like an Adventure Log */
         .side-hud {
             flex: 1;
-            background: #1a2333;
-            border: 1px solid #2d3748;
+            background: #ffffff;
+            border: 4px solid #ff6f00;
             padding: 25px;
-            border-radius: 8px;
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             max-width: 320px;
+            box-shadow: 0 8px 0px #ff6f00, 0 12px 20px rgba(0,0,0,0.1);
+            min-height: 400px;
         }
 
         .hud-section h3 {
             margin-top: 0;
-            color: #87ceeb;
-            border-bottom: 2px solid #2d3748;
+            color: #ff6f00;
+            border-bottom: 3px dashed #ffb300;
             padding-bottom: 8px;
             margin-bottom: 15px;
+            font-size: 1.5rem;
+            text-align: center;
         }
 
         .mode-toggle {
             display: flex;
-            background: #121824;
-            padding: 4px;
-            border-radius: 6px;
+            background: #fff3cd;
+            padding: 6px;
+            border-radius: 12px;
             margin-bottom: 20px;
-            border: 1px solid #2d3748;
+            border: 2px solid #ffcc00;
         }
         .mode-btn {
             flex: 1;
             padding: 10px;
             background: transparent;
-            color: #a0aec0;
+            color: #a05a00;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
+            font-family: inherit;
             transition: all 0.2s;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
         .mode-btn.active {
-            background: #87ceeb;
-            color: #121824;
-            box-shadow: 0 2px 8px rgba(135, 206, 235, 0.4);
+            background: #ff6f00;
+            color: #ffffff;
+            box-shadow: 0 4px 0px #b34e00;
         }
 
         .timer-box {
-            font-size: 2rem;
-            font-family: monospace;
+            font-size: 1.8rem;
             font-weight: bold;
             text-align: center;
-            padding: 15px;
-            border-radius: 6px;
+            padding: 10px;
+            border-radius: 10px;
             margin-bottom: 15px;
+            border: 2px solid rgba(0,0,0,0.1);
         }
         .timer-active {
-            background-color: #2f855a !important;
-            color: #fff;
+            background-color: #4bc05f !important;
+            color: white;
+            box-shadow: 0 4px 0px #379247;
         }
         .timer-deactive {
-            background-color: #9b2c2c !important;
-            color: #e2e8f0;
-            opacity: 0.6;
+            background-color: #e0e0e0 !important;
+            color: #777777;
+            box-shadow: 0 4px 0px #b5b5b5;
         }
 
         .status-text {
             font-size: 1.1rem;
-            background: #121824;
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 4px solid #87ceeb;
+            background: #fff9e6;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #ffb300;
             margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
         }
 
         .btn-restart {
             width: 100%;
             padding: 14px;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: bold;
-            background: #87ceeb;
-            color: #121824;
+            font-family: inherit;
+            background: #4bc05f; /* Friendly Go-Green */
+            color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 12px;
             cursor: pointer;
+            box-shadow: 0 6px 0px #379247;
+            transition: transform 0.1s;
         }
-        .btn-restart:hover { background: #60b4db; }
+        .btn-restart:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0px #379247;
+        }
     </style>
 
     <!-- Dependencies -->
@@ -199,30 +222,30 @@
 </head>
 <body>
 
-    <h1>♟️ MagicChess</h1>
-    <div class="subtitle">Custom Tactical Lab Edition</div>
+    <h1>🧀 Geronimo's Cheese Chess Arena! 🐭</h1>
+    <div class="subtitle">Fabumouse Chess Training Lab</div>
 
     <div class="game-layout">
         <div class="board-container">
-            <div class="player-tag" id="top-tag">🤖 Stockfish Bot (Black) <div id="black-clock" class="timer-box timer-deactive" style="font-size:1.1rem; padding:4px 10px; margin:0;">10:00</div></div>
+            <div class="player-tag" id="top-tag">🤖 Stockfish Bot <div id="black-clock" class="timer-box timer-deactive" style="font-size:1.1rem; padding:4px 10px; margin:0;">10:00</div></div>
             <div id="board"></div>
-            <div class="player-tag" id="bottom-tag">👤 You (White) <div id="white-clock" class="timer-box timer-deactive" style="font-size:1.1rem; padding:4px 10px; margin:0;">10:00</div></div>
+            <div class="player-tag" id="bottom-tag">🧀 Future Grandmaster <div id="white-clock" class="timer-box timer-deactive" style="font-size:1.1rem; padding:4px 10px; margin:0;">10:00</div></div>
         </div>
 
         <div class="side-hud">
             <div class="hud-section">
-                <h3>Battle HUD</h3>
+                <h3>Adventure Log</h3>
                 <div class="mode-toggle">
-                    <button id="mode-bot" class="mode-btn active" onclick="changeGameMode('bot')">🤖 vs Computer</button>
-                    <button id="mode-pvp" class="mode-btn" onclick="changeGameMode('pvp')">👥 vs Friend</button>
+                    <button id="mode-bot" class="mode-btn active" onclick="changeGameMode('bot')">🤖 Play Bot</button>
+                    <button id="mode-pvp" class="mode-btn" onclick="changeGameMode('pvp')">👥 Pass & Play</button>
                 </div>
-                <div id="status" class="status-text">White's Turn! Select a piece to view custom move indicators.</div>
-                <div style="margin-top: 20px;">
-                    <div style="font-size: 0.9rem; color: #a0aec0; margin-bottom: 5px;">Active Turn Clock:</div>
+                <div id="status" class="status-text">Your Turn! Click a piece to discover its secret legal paths! 🌟</div>
+                <div style="margin-top: 15px;">
+                    <div style="font-size: 0.9rem; color: #a05a00; font-weight: bold; margin-bottom: 5px; text-align: center;">⏰ Turn Timer:</div>
                     <div id="master-timer" class="timer-box timer-active">10:00</div>
                 </div>
             </div>
-            <button class="btn-restart" onclick="resetMagicMatch()">🔄 Restart Match</button>
+            <button class="btn-restart" onclick="resetMagicMatch()">🏁 New Adventure!</button>
         </div>
     </div>
 
@@ -254,7 +277,7 @@
                     }
                 };
             } catch (e) {
-                console.error("Worker error:", e);
+                console.error("Engine issue:", e);
             }
         }
 
@@ -326,7 +349,7 @@
 
         function makeStockfishMove() {
             if (game.game_over() || gameMode !== 'bot' || !stockfishWorker) return;
-            document.getElementById('status').innerText = "🔮 Stockfish is thinking...";
+            document.getElementById('status').innerText = "🤔 The bot is looking for a fabumouse move...";
             stockfishWorker.postMessage("position startpos moves " + game.history({ verbose: true }).map(m => m.from + m.to).join(' '));
             stockfishWorker.postMessage("go depth 10"); 
         }
@@ -347,9 +370,9 @@
         }
 
         function updateStatusMessages () {
-            var status = (game.turn() === 'w') ? "Your Turn (White)!" : "Stockfish Thinking...";
-            if (game.in_checkmate()) status = "Game Over: Checkmate!";
-            else if (game.in_draw()) status = "Game Over: Draw!";
+            var status = (game.turn() === 'w') ? "Your turn! Go catch 'em! 🌟" : "The Bot is calculating... ⚡";
+            if (game.in_checkmate()) status = "Checkmate! What a fabumouse victory! 🏆";
+            else if (game.in_draw()) status = "It's a draw! Spectacular defense! 🤝";
             document.getElementById('status').innerText = status;
         }
 

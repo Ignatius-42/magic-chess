@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
     
     <style>
-        /* Bright, Energetic, Playful Kid-Friendly Background  */
+        /* Bright, Energetic, Playful Kid-Friendly Background */
         body {
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Fredoka One', sans-serif;
             display: flex;
@@ -432,17 +432,13 @@
             updateLabelsAndClocks();
         }
 
-        // --- SAFE, COMPILER-FRIENDLY PIECE THEME MAPPING ---
-        function cleanCutesPieceLoader(piece) {
-            return 'https://lichess1.org/assets/piece/cutes/' + piece + '.png';
-        }
-
+        // --- EXPLICIT DIRECT TOKEN ASSET PIPELINE ---
         var config = {
             draggable: true,
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: cleanCutesPieceLoader
+            pieceTheme: 'https://lichess1.org/assets/piece/cutes/{piece}.png'
         };
         
         board = Chessboard('board', config);

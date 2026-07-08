@@ -432,16 +432,9 @@
             updateLabelsAndClocks();
         }
 
-        // --- LICHESS CUTES CARTOON THEME ROUTER ---
-        function lichessCutesPieceLoader(piece) {
-            var color = piece.charAt(0); // 'w' or 'b'
-            var type = piece.charAt(1);  // 'P', 'R', 'N', 'B', 'Q', 'K'
-            
-            // Lichess expects Uppercase for White pieces, lowercase for Black pieces
-            var pieceLetter = (color === 'w') ? type : type.toLowerCase();
-            
-            // Maps straight to the real online vector graphic file
-            return 'https://lichess1.org/assets/piece/cutes/' + pieceLetter + '.svg';
+        // Load Geronimo-themed SVG pieces from local `img/pieces/`
+        function geronimoPieceLoader(piece) {
+            return 'img/pieces/' + piece + '.svg';
         }
 
         var config = {
@@ -449,7 +442,7 @@
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: lichessCutesPieceLoader // Links up the official Cutes graphics
+            pieceTheme: geronimoPieceLoader
         };
         
         board = Chessboard('board', config);

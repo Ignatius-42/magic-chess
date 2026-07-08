@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
     
     <style>
-        /* Bright, Energetic, Playful Kids-Friendly Background */
+        /* Bright, Energetic, Playful Kid-Friendly Background */
         body {
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Fredoka One', sans-serif;
             display: flex;
@@ -432,13 +432,34 @@
             updateLabelsAndClocks();
         }
 
-        // --- EXPLICIT DIRECT TOKEN ASSET PIPELINE ---
+        // --- KID-FRIENDLY GERONIMO THEME PIECE MAPPER ---
+        function kidFriendlyPieceLoader(piece) {
+            var mapping = {
+                'wP': '🧀', // White Pawns are Cheddar Cheese blocks
+                'wR': '🏰', // White Rooks are castles
+                'wN': '🐴', // White Knights are playful ponies
+                'wB': '🧙', // White Bishops are friendly wizards
+                'wQ': '👑', // White Queen is a golden crown
+                'wK': '🦁', // White King is a proud lion
+                
+                'bP': '🐱', // Black Pawns are sneaky cats looking for the cheese!
+                'bR': '🗼', // Black Rooks are dark towers
+                'bN': '🦇', // Black Knights are flapping bats
+                'bB': '🔮', // Black Bishops are crystal balls
+                'bQ': '🧛', // Black Queen is a funny cartoon vampire
+                'bK': '🐉'  // Black King is a big dragon
+            };
+            
+            var character = mapping[piece] || '❓';
+            return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><text y="32" font-size="34">' + character + '</text></svg>';
+        }
+
         var config = {
             draggable: true,
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: 'https://lichess1.org/assets/piece/cutes/{piece}.png'
+            pieceTheme: kidFriendlyPieceLoader
         };
         
         board = Chessboard('board', config);

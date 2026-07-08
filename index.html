@@ -432,26 +432,16 @@
             updateLabelsAndClocks();
         }
 
-        // --- KID-FRIENDLY GERONIMO THEME PIECE MAPPER ---
-        function kidFriendlyPieceLoader(piece) {
-            var mapping = {
-                'wP': '🧀', // White Pawns are Cheddar Cheese blocks
-                'wR': '🏰', // White Rooks are castles
-                'wN': '🐴', // White Knights are playful ponies
-                'wB': '🧙', // White Bishops are friendly wizards
-                'wQ': '👑', // White Queen is a golden crown
-                'wK': '🦁', // White King is a proud lion
-                
-                'bP': '🐱', // Black Pawns are sneaky cats looking for the cheese!
-                'bR': '🗼', // Black Rooks are dark towers
-                'bN': '🦇', // Black Knights are flapping bats
-                'bB': '🔮', // Black Bishops are crystal balls
-                'bQ': '🧛', // Black Queen is a funny cartoon vampire
-                'bK': '🐉'  // Black King is a big dragon
-            };
+        // --- LICHESS CUTES CARTOON THEME ROUTER ---
+        function lichessCutesPieceLoader(piece) {
+            var color = piece.charAt(0); // 'w' or 'b'
+            var type = piece.charAt(1);  // 'P', 'R', 'N', 'B', 'Q', 'K'
             
-            var character = mapping[piece] || '❓';
-            return 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><text y="32" font-size="34">' + character + '</text></svg>';
+            // Lichess expects Uppercase for White pieces, lowercase for Black pieces
+            var pieceLetter = (color === 'w') ? type : type.toLowerCase();
+            
+            // Maps straight to the real online vector graphic file
+            return 'https://lichess1.org/assets/piece/cutes/' + pieceLetter + '.svg';
         }
 
         var config = {
@@ -459,7 +449,7 @@
             position: 'start',
             onDragStart: onDragStart,
             onDrop: onDrop,
-            pieceTheme: kidFriendlyPieceLoader
+            pieceTheme: lichessCutesPieceLoader // Links up the official Cutes graphics
         };
         
         board = Chessboard('board', config);

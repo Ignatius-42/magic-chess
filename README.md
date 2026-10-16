@@ -3,20 +3,20 @@
 magic-chess is a lightweight browser chess app built for a kid-friendly experience. It supports:
 - playing against a Stockfish bot
 - pass-and-play local multiplayer
+- resigning an active match, with the winner shown and the game stopped
 - a custom playful UI with a timed match flow
 
 ## Current project context
 
 This repo is a small static web app with no backend or database. The game logic is driven in-browser using `chess.js`, the board UI is rendered with `chessboard.js`, and the bot uses a Stockfish worker loaded from the repo's `stockfish-worker.js` file.
 
-The app was originally themed with a cheese/character style, but the current version uses a standard classical chess piece set from Lichess (`cburnett` SVGs). The piece assets are stored locally under `img/pieces/` and are intended to be a neutral, clean look that is easier for a child to understand without the custom cartoon style.
+The app was originally themed with a cheese/character style, but the current version uses a standard classical chess piece set from Lichess (`cburnett` SVGs). The piece assets are stored locally under `img/pieces/` and are intended to be a neutral, clean look that is easier for a child to understand without the custom cartoon style. When a pawn reaches the opposite end of the board, the player can choose a queen, rook, bishop, or knight from the promotion picker.
 
 ## Files
 
 - `index.html` — main game UI, logic, timers, mode switching, board interactions
 - `stockfish-worker.js` — loads the Stockfish engine for bot moves
 - `img/pieces/` — local SVG chess piece assets
-- `img/pieces-cheese/` — legacy cheese variant left behind in prior work, no longer used by the app
 
 ## Local run
 

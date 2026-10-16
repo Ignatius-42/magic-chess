@@ -219,6 +219,96 @@
             transform: translateY(4px);
             box-shadow: 0 2px 0px #379247;
         }
+        .btn-resign {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            font-family: inherit;
+            background: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 5px 0px #a8322e;
+            margin-top: 12px;
+        }
+        .btn-resign:active:not(:disabled) {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0px #a8322e;
+        }
+        .btn-resign:disabled {
+            background: #bdbdbd;
+            box-shadow: 0 5px 0px #999999;
+            cursor: not-allowed;
+        }
+
+        .promotion-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(74, 44, 0, 0.65);
+        }
+        .promotion-overlay[hidden] {
+            display: none;
+        }
+        .promotion-dialog {
+            box-sizing: border-box;
+            width: min(420px, 100%);
+            padding: 24px;
+            border: 4px solid #ff6f00;
+            border-radius: 20px;
+            background: #ffffff;
+            box-shadow: 0 8px 0 #b34e00, 0 12px 28px rgba(0,0,0,0.25);
+            text-align: center;
+        }
+        .promotion-dialog h2 {
+            margin: 0 0 8px;
+            color: #ff6f00;
+        }
+        .promotion-dialog p {
+            margin: 0 0 18px;
+            color: #8d5b00;
+            font-weight: bold;
+        }
+        .promotion-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .promotion-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 4px;
+            border: 2px solid #ffb300;
+            border-radius: 12px;
+            background: #fff9e6;
+            color: #4a2c00;
+            cursor: pointer;
+            font: inherit;
+            font-weight: bold;
+        }
+        .promotion-option:hover,
+        .promotion-option:focus-visible {
+            outline: 3px solid #4bc05f;
+            outline-offset: 2px;
+            background: #e8f5e9;
+        }
+        .promotion-option img {
+            width: 56px;
+            height: 56px;
+        }
+        @media (max-width: 420px) {
+            .promotion-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 
     <!-- Dependencies -->
@@ -252,7 +342,33 @@
                 </div>
             </div>
             <button class="btn-restart" onclick="resetMagicMatch()">🏁 New Adventure!</button>
+            <button id="resign-button" class="btn-resign" onclick="resignMatch()">🏳️ Resign</button>
         </div>
+    </div>
+
+    <div id="promotion-overlay" class="promotion-overlay" hidden>
+        <section class="promotion-dialog" role="dialog" aria-modal="true" aria-labelledby="promotion-title">
+            <h2 id="promotion-title">Choose your promotion!</h2>
+            <p>Your pawn made it across the board. What should it become?</p>
+            <div class="promotion-options">
+                <button class="promotion-option" type="button" data-promotion="q">
+                    <img alt="" src="img/pieces/wQ.svg">
+                    <span>Queen</span>
+                </button>
+                <button class="promotion-option" type="button" data-promotion="r">
+                    <img alt="" src="img/pieces/wR.svg">
+                    <span>Rook</span>
+                </button>
+                <button class="promotion-option" type="button" data-promotion="b">
+                    <img alt="" src="img/pieces/wB.svg">
+                    <span>Bishop</span>
+                </button>
+                <button class="promotion-option" type="button" data-promotion="n">
+                    <img alt="" src="img/pieces/wN.svg">
+                    <span>Knight</span>
+                </button>
+            </div>
+        </section>
     </div>
 
     <script>
@@ -264,18 +380,25 @@
         var blackTime = 600;
         var timerInterval = null;
         var selectedSourceSquare = null;
+        var pendingPromotion = null;
+        var resigned = false;
+
+        function isMatchOver() {
+            return resigned || game.game_over();
+        }
 
         function initStockfishEngine() {
             if (stockfishWorker) stockfishWorker.terminate();
             try {
                 stockfishWorker = new Worker('stockfish-worker.js');
                 stockfishWorker.onmessage = function(event) {
+                    if (isMatchOver()) return;
                     if (event.data.startsWith("bestmove")) {
                         var bestMove = event.data.split(" ")[1];
                         game.move({
                             from: bestMove.substring(0, 2),
                             to: bestMove.substring(2, 4),
-                            promotion: 'q'
+                            promotion: bestMove.substring(4, 5) || 'q'
                         });
                         board.position(game.fen());
                         removeMagicHighlights();
@@ -320,7 +443,11 @@
         function startClockEngine() {
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(function() {
-                if (game.game_over()) { clearInterval(timerInterval); return; }
+                if (isMatchOver()) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    return;
+                }
                 if (game.turn() === 'w') {
                     whiteTime--;
                 } else {
@@ -351,7 +478,8 @@
         }
 
         function onDragStart (source, piece, position, orientation) {
-            if (game.game_over()) return false;
+            if (pendingPromotion !== null) return false;
+            if (isMatchOver()) return false;
             if (gameMode === 'bot' && piece.search(/^b/) !== -1) return false;
             removeMagicHighlights();
             showMagicHighlights(source);
@@ -359,16 +487,45 @@
         }
 
         function makeStockfishMove() {
-            if (game.game_over() || gameMode !== 'bot' || !stockfishWorker) return;
+            if (isMatchOver() || gameMode !== 'bot' || !stockfishWorker) return;
             document.getElementById('status').innerText = "🤔 The bot is looking for a fabumouse move...";
-            stockfishWorker.postMessage("position startpos moves " + game.history({ verbose: true }).map(m => m.from + m.to).join(' '));
+            stockfishWorker.postMessage("position startpos moves " + game.history({ verbose: true }).map(m => m.from + m.to + (m.promotion || '')).join(' '));
             stockfishWorker.postMessage("go depth 10"); 
         }
 
         function processMoveExecution(source, target) {
-            var move = game.move({ from: source, to: target, promotion: 'q' });
+            if (pendingPromotion !== null) return 'snapback';
+            if (isMatchOver()) return 'snapback';
+
+            var legalMove = game.moves({ verbose: true }).find(function(move) {
+                return move.from === source && move.to === target;
+            });
+            if (!legalMove) return 'snapback';
+
+            if (legalMove.promotion) {
+                showPromotionPicker(source, target, game.turn());
+                return 'snapback';
+            }
+
+            return completeMove(source, target);
+        }
+
+        function showPromotionPicker(source, target, color) {
+            pendingPromotion = { source: source, target: target };
+            document.querySelectorAll('.promotion-option').forEach(function(button) {
+                var image = button.querySelector('img');
+                image.src = 'img/pieces/' + color + button.dataset.promotion.toUpperCase() + '.svg';
+            });
+            document.getElementById('promotion-overlay').hidden = false;
+            document.querySelector('.promotion-option').focus();
+        }
+
+        function completeMove(source, target, promotion) {
+            var move = game.move({ from: source, to: target, promotion: promotion });
             if (move === null) return 'snapback';
 
+            pendingPromotion = null;
+            document.getElementById('promotion-overlay').hidden = true;
             removeMagicHighlights();
             selectedSourceSquare = null;
             board.position(game.fen());
@@ -387,7 +544,8 @@
         }
 
         function onSquareClick(square) {
-            if (game.game_over()) return;
+            if (pendingPromotion !== null) return;
+            if (isMatchOver()) return;
             if (gameMode === 'bot' && game.turn() === 'b') return;
 
             if (selectedSourceSquare !== null) {
@@ -413,9 +571,37 @@
 
         function updateStatusMessages () {
             var status = (game.turn() === 'w') ? "Your turn! Go catch 'em! 🌟" : "The Bot is calculating... ⚡";
-            if (game.in_checkmate()) status = "Checkmate! What a fabumouse victory! 🏆";
+            if (resigned) {
+                if (gameMode === 'bot') {
+                    status = "You resigned. The Bot wins! 🏳️";
+                } else {
+                    var winner = game.turn() === 'w' ? "Black" : "White";
+                    status = winner + " wins by resignation! 🏳️";
+                }
+            } else if (game.in_checkmate()) status = "Checkmate! What a fabumouse victory! 🏆";
             else if (game.in_draw()) status = "It's a draw! Spectacular defense! 🤝";
             document.getElementById('status').innerText = status;
+            document.getElementById('resign-button').disabled = isMatchOver();
+        }
+
+        function resignMatch() {
+            if (isMatchOver()) return;
+            if (!window.confirm("Are you sure you want to resign this match?")) return;
+
+            resigned = true;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            if (stockfishWorker) {
+                stockfishWorker.terminate();
+                stockfishWorker = null;
+            }
+            pendingPromotion = null;
+            document.getElementById('promotion-overlay').hidden = true;
+            selectedSourceSquare = null;
+            removeMagicHighlights();
+            updateStatusMessages();
         }
 
         function resetMagicMatch() {
@@ -425,6 +611,9 @@
             whiteTime = 600;
             blackTime = 600;
             selectedSourceSquare = null;
+            pendingPromotion = null;
+            resigned = false;
+            document.getElementById('promotion-overlay').hidden = true;
             board.start();
             removeMagicHighlights();
             initStockfishEngine();
@@ -452,6 +641,11 @@
         $('#board').on('click', '.square-55d63', function() {
             var square = $(this).attr('data-square');
             onSquareClick(square);
+        });
+
+        $('.promotion-option').on('click', function() {
+            if (pendingPromotion === null) return;
+            completeMove(pendingPromotion.source, pendingPromotion.target, this.dataset.promotion);
         });
     </script>
 </body>
